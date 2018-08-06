@@ -63,5 +63,5 @@ node_modules/
 .gitignore/
 .elasticbeanstalk/
 
-.zip
+*.zip
 
