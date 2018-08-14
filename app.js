@@ -21,12 +21,22 @@ app.configure(function() {
 });
 
 var conn = mysql.createConnection({
-  host: process.env.RDS_HOSTNAME,
-  user: process.env.RDS_USERNAME,
-  password: process.env.RDS_PASSWORD,
-  port: process.env.RDS_PORT,
-  database: 'happy'
+  host: 'timetotogetherdb.chz1adkzud9i.us-east-1.rds.amazonaws.com',
+  user: 'root',
+  password: 'dkfkq486',
+  port: 3306,
+  database: 'happy',
+  multipleStatements : true
 });
+
+// var conn = mysql.createConnection({
+//   host: process.env.RDS_HOSTNAME,
+//   user: process.env.RDS_USERNAME,
+//   password: process.env.RDS_PASSWORD,
+//   port: process.env.RDS_PORT,
+//   database: 'happy',
+//   multipleStatements : true
+// });
 
 app.use(express.errorHandler());
 
@@ -35,7 +45,7 @@ app.post('/putNoise', function(req, res) {
   var roomId = req.body.roomId;
   var noise = req.body.noise;
   var temp = new Date();
-  var date = temp.toFormat('YYYY-MM-DD HH24:MI:SS');
+  var date = temp.toFormat('YY-MM-DD HH24:MI');
 
   var noise = {
     roomId: roomId,
@@ -54,16 +64,40 @@ app.post('/putNoise', function(req, res) {
 
 });
 
-app.get('/getNoise/:roomId', function(req, res) {
-  var roomId = req.params.roomId;
+// select *
+// from (select * from mytable order by `Group`, Age desc, Person) x
+// group by `Group`
 
-  var sql = "SELECT * FROM (SELECT * from RoomNoise Where roomId=? order by time desc limit 10)as a order by time asc";
-  conn.query(sql, [roomId], function(err, results) {
+// var sql = "SELECT * FROM (SELECT * from RoomNoise Where roomId=? order by time desc limit 10)as a order by time asc;";
+
+
+app.get('/getNoise', function(req, res) {
+  var sql = "SELECT DISTINCT roomId FROM RoomNoise;"
+  sql += "SELECT COUNT(DISTINCT roomId) AS count FROM RoomNoise;"
+  conn.query(sql, function(err, results) {
+    console.log(results);
+
+    var count = results[1][0].count;
     if(err){
       console.log(err);
     }
     console.log(results);
-    res.send(results);
+
+    var roomId = new Array();
+    for(var i=0; i<count; i++){
+      roomId[i]=results[0][i].roomId;
+    }
+
+    var sql = "SELECT COUNT(DISTINCT roomId) AS count FROM RoomNoise;";
+    for(var i=0; i<count; i++){
+      sql += "SELECT * FROM (SELECT * from RoomNoise Where roomId=? order by time desc limit 10)as a order by time asc;";
+    }
+    conn.query(sql, roomId, function(err, result) {
+      if(err){
+        console.log(err);
+      }
+      res.send(result);
+    });
   });
 });
 
