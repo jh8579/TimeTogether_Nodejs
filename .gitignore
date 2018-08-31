@@ -64,4 +64,5 @@ node_modules/
 .elasticbeanstalk/
 
 *.zip
+package-lick.json
 
